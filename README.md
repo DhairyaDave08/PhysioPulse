@@ -273,36 +273,52 @@ No installation is required. Open the Doctor or Patient Portal in a Web Bluetoot
 
 ```text
 PhysioPulse/
-├── physiopulse.md
-├── physiopulse-cover.jpg
-├── physiopulse-hardware.jpg
-├── physiopulse-dashboard.jpg
-├── physiopulse-calibration.jpg
-├── physiopulse-demo.mp4
-├── main.ino
-├── bicepCurl.ino
-├── FrontRaise.ino
-├── SideRaise.ino
-├── LowerLegRaise.ino
-├── HandCircle.ino
-├── WristCircle.ino
-├── firmware/
-│   └── physiopulse_firmware.ino
 ├── backend/
-│   ├── main.py
-│   ├── models.py
-│   ├── database.py
-│   └── auth.py
-└── frontend/
-    ├── index.html
-    ├── doctor-portal.html
-    ├── patient-portal.html
-    ├── js/
-    │   └── physioEngine.js
-    ├── css/
-    │   └── style.css
-    ├── service-worker.js
-    └── manifest.json
+│   ├── app/
+│   │   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── schemas.py
+│   │   └── seed.py
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   └── test_api.py
+│   ├── requirements.txt
+│   └── run.py
+│
+├── firmware/
+│   └── main.ino
+│
+├── webapp/
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   ├── api.js
+│   │   ├── app.js
+│   │   ├── auth.js
+│   │   ├── backend-config.js
+│   │   ├── charts.js
+│   │   ├── connection.js
+│   │   ├── doctor-portal.js
+│   │   ├── patient-portal.js
+│   │   ├── physio-engine.js
+│   │   └── session.js
+│   ├── index.html
+│   ├── manifest.json
+│   └── sw.js
+│
+├── .gitignore
+├── README.md
+├── physiopulse-myosa-cover-image.PNG
+├── physiopulse-myosa-doctor.png
+├── physiopulse-myosa-hand.jpeg
+├── physiopulse-myosa-leg.jpeg
+├── physiopulse-myosa-patient-dashboard.jpeg
+└── physiopulse-myosa-patient-exercise.jpeg
 ```
 
 ---
