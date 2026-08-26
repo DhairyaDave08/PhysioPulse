@@ -1,20 +1,10 @@
----
-publishDate: 2026-08-25
-title: PhysioPulse — Smart Physiotherapy Monitoring Sleeve
-excerpt: A wearable physiotherapy monitoring system combining MYOSA sensing, 3D motion analysis, personalized calibration, and exercise-specific movement detection — paired with a Doctor–Patient web portal for real-time remote monitoring.
-image: physiopulse-myosa-cover-image.PNG
-
-tags:
-  - MYOSA
-  - Physiotherapy
-  - Biomechanics
-  - LinearAlgebra
-  - WearableTechnology
-  - MotionAnalysis
-  - WebBluetooth
-  - FastAPI
-  - DigitalHealth
----
+| Metadata | Value |
+| :--- | :--- |
+| **publishDate** | 2026-08-25 |
+| **title** | PhysioPulse - Smart Physiotherapy Monitoring Sleeve |
+| **excerpt** | A wearable physiotherapy monitoring system combining MYOSA sensing... |
+| **image** | ![PhysioPulse Cover](physiopulse-myosa-cover-image.PNG) |
+| **tags** | MYOSA, Physiotherapy, Biomechanics, LinearAlgebra, WearableTechnology, MotionAnalysis, WebBluetooth, FastAPI, DigitalHealth |
 
 > From raw sensor vectors to biologically meaningful movement — PhysioPulse makes rehabilitation measurable, explainable, and personalized.
 
