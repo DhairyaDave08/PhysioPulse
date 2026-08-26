@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="description" content="PhysioPulse – Real-time physiotherapy monitoring dashboard for accelerometer, gyroscope and temperature data from MYOSA ESP32 sensor." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PhysioPulse" />
+  <title>PhysioPulse – Physiotherapy Monitor</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ═══ SPLASH SCREEN ═══════════════════════════════════════════════════ -->
+<div id="splash-screen" class="splash">
+  <div class="splash-content">
+    <div class="splash-logo">
+      <div class="splash-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="30" stroke="url(#splashGrad)" stroke-width="2"/>
+          <path d="M12 32 L20 20 L28 36 L36 14 L44 28 L52 32" stroke="url(#splashGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="splashGrad" x1="12" y1="14" x2="52" y2="50" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00d4ff"/>
+              <stop offset="100%" stop-color="#7c3aed"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="splash-title">PhysioPulse</h1>
+      <p class="splash-subtitle">Physiotherapy Monitoring System</p>
+      <p class="splash-team">MYOSA 6.0 Prototype</p>
+    </div>
+    <div class="splash-loader">
+      <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+      <p class="loader-text" id="loaderText">Initializing...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══════════════════════════════════════════════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- ─── SIDEBAR NAVIGATION ──────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="url(#navGrad)" stroke-width="1.5"/>
+            <path d="M8 20 L13 13 L18 22 L23 9 L28 17 L32 20" stroke="url(#navGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="navGrad" x1="8" y1="9" x2="32" y2="31" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#00d4ff"/>
+                <stop offset="100%" stop-color="#7c3aed"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">PhysioPulse</span>
+          <span class="brand-tag">MYOSA 6.0</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">✕</button>
+    </div>
+
+    <!-- Connection Status in sidebar -->
+    <div class="sidebar-connection">
+      <div class="conn-dot" id="sidebarConnDot"></div>
+      <span class="conn-label" id="sidebarConnLabel">Disconnected</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="live" id="nav-live">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        <span class="nav-label">Live Charts</span>
+      </a>
+      <a href="#" class="nav-item" data-page="session" id="nav-session">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </span>
+        <span class="nav-label">Session</span>
+      </a>
+      <a href="#" class="nav-item" data-page="history" id="nav-history">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </span>
+        <span class="nav-label">History</span>
+      </a>
+      <a href="#" class="nav-item" data-page="settings" id="nav-settings">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+        <span class="nav-label">Settings</span>
+      </a>
+      <a href="#" class="nav-item" data-page="about" id="nav-about">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </span>
+        <span class="nav-label">About</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="hw-badge">
+        <span class="hw-dot"></span>
+        <span>ESP32 + MPU-6050</span>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ─── MAIN CONTENT ─────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <button class="topbar-menu" id="menuBtn" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="connection-badge" id="connBadge">
+          <div class="conn-pulse" id="connPulse"></div>
+          <span id="connStatus">Disconnected</span>
+        </div>
+        <div class="live-indicator hidden" id="liveIndicator">
+          <span class="live-dot"></span>
+          <span>LIVE</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── PAGE: DASHBOARD ────────────────────────────────────────────── -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1>Patient Dashboard</h1>
+        <div class="page-meta">
+          <span id="dashTimestamp">—</span>
+          <span class="rate-badge" id="rateBadge">0 Hz</span>
+        </div>
+      </div>
+
+      <!-- Patient Info Bar -->
+      <div class="patient-bar">
+        <div class="patient-info">
+          <div class="patient-avatar">P</div>
+          <div class="patient-details">
+            <span class="patient-name" id="patientName">Patient</span>
+            <span class="patient-session" id="patientSession">No active session</span>
+          </div>
+        </div>
+        <button class="btn-primary" id="quickStartBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Start Session
+        </button>
+      </div>
+
+      <!-- Sensor Cards Grid -->
+      <div class="cards-grid">
+        <!-- Accelerometer Card -->
+        <div class="sensor-card card-accel">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon accel-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </div>
+              <div>
+                <h2 class="card-title">Accelerometer</h2>
+                <p class="card-subtitle">Linear acceleration (g)</p>
+              </div>
+            </div>
+            <div class="card-badge">±2g</div>
+          </div>
+          <div class="axes-grid">
+            <div class="axis-reading">
+              <span class="axis-label axis-x">X</span>
+              <span class="axis-value mono" id="accelX">0.000</span>
+              <span class="axis-unit">g</span>
+              <div class="axis-bar"><div class="axis-fill ax-fill" id="accelXBar"></div></div>
+            </div>
+            <div class="axis-reading">
+              <span class="axis-label axis-y">Y</span>
+              <span class="axis-value mono" id="accelY">0.000</span>
+              <span class="axis-unit">g</span>
+              <div class="axis-bar"><div class="axis-fill ay-fill" id="accelYBar"></div></div>
+            </div>
+            <div class="axis-reading">
+              <span class="axis-label axis-z">Z</span>
+              <span class="axis-value mono" id="accelZ">0.000</span>
+              <span class="axis-unit">g</span>
+              <div class="axis-bar"><div class="axis-fill az-fill" id="accelZBar"></div></div>
+            </div>
+          </div>
+          <div class="card-magnitude">
+            <span class="mag-label">Magnitude</span>
+            <span class="mag-value mono" id="accelMag">0.000 g</span>
+          </div>
+          <canvas class="mini-chart" id="miniAccelChart" height="60"></canvas>
+        </div>
+
+        <!-- Gyroscope Card -->
+        <div class="sensor-card card-gyro">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon gyro-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9"/><path d="M21 12a9 9 0 0 1-9 9"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+              </div>
+              <div>
+                <h2 class="card-title">Gyroscope</h2>
+                <p class="card-subtitle">Angular velocity (°/s)</p>
+              </div>
+            </div>
+            <div class="card-badge">±250°/s</div>
+          </div>
+          <div class="axes-grid">
+            <div class="axis-reading">
+              <span class="axis-label axis-x">X</span>
+              <span class="axis-value mono" id="gyroX">0.000</span>
+              <span class="axis-unit">°/s</span>
+              <div class="axis-bar"><div class="axis-fill gx-fill" id="gyroXBar"></div></div>
+            </div>
+            <div class="axis-reading">
+              <span class="axis-label axis-y">Y</span>
+              <span class="axis-value mono" id="gyroY">0.000</span>
+              <span class="axis-unit">°/s</span>
+              <div class="axis-bar"><div class="axis-fill gy-fill" id="gyroYBar"></div></div>
+            </div>
+            <div class="axis-reading">
+              <span class="axis-label axis-z">Z</span>
+              <span class="axis-value mono" id="gyroZ">0.000</span>
+              <span class="axis-unit">°/s</span>
+              <div class="axis-bar"><div class="axis-fill gz-fill" id="gyroZBar"></div></div>
+            </div>
+          </div>
+          <div class="card-magnitude">
+            <span class="mag-label">Total Rate</span>
+            <span class="mag-value mono" id="gyroMag">0.000 °/s</span>
+          </div>
+          <canvas class="mini-chart" id="miniGyroChart" height="60"></canvas>
+        </div>
+
+        <!-- Temperature Card -->
+        <div class="sensor-card card-temp">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon temp-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+              </div>
+              <div>
+                <h2 class="card-title">Temperature</h2>
+                <p class="card-subtitle">Sensor junction temp (°C)</p>
+              </div>
+            </div>
+          </div>
+          <div class="temp-display">
+            <div class="temp-gauge-wrap">
+              <svg class="temp-gauge" viewBox="0 0 160 100" id="tempGaugeSVG">
+                <!-- Gauge arc background -->
+                <path d="M 20 90 A 70 70 0 0 1 140 90" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" stroke-linecap="round"/>
+                <!-- Gauge arc fill -->
+                <path d="M 20 90 A 70 70 0 0 1 140 90" fill="none" stroke="url(#tempGrad)" stroke-width="12" stroke-linecap="round"
+                  stroke-dasharray="220" stroke-dashoffset="220" id="tempGaugeFill"/>
+                <!-- Needle -->
+                <line x1="80" y1="90" x2="80" y2="30" stroke="#fff" stroke-width="2" stroke-linecap="round"
+                  transform="rotate(0, 80, 90)" id="tempNeedle"/>
+                <circle cx="80" cy="90" r="4" fill="#fff"/>
+                <defs>
+                  <linearGradient id="tempGrad" x1="20" y1="90" x2="140" y2="90" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#00d4ff"/>
+                    <stop offset="50%" stop-color="#f59e0b"/>
+                    <stop offset="100%" stop-color="#ef4444"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="temp-value-wrap">
+                <span class="temp-value mono" id="tempValue">--.-</span>
+                <span class="temp-unit">°C</span>
+              </div>
+            </div>
+            <div class="temp-stats">
+              <div class="temp-stat">
+                <span class="ts-label">Min</span>
+                <span class="ts-val mono" id="tempMin">--.-</span>
+              </div>
+              <div class="temp-stat">
+                <span class="ts-label">Max</span>
+                <span class="ts-val mono" id="tempMax">--.-</span>
+              </div>
+              <div class="temp-stat">
+                <span class="ts-label">Avg</span>
+                <span class="ts-val mono" id="tempAvg">--.-</span>
+              </div>
+            </div>
+          </div>
+          <canvas class="mini-chart" id="miniTempChart" height="60"></canvas>
+        </div>
+
+        <!-- ROM Card (Range of Motion) -->
+        <div class="sensor-card card-rom">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-icon rom-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12"/><path d="m15 19-3 3-3-3"/><path d="M20 12a8 8 0 1 0-16 0"/></svg>
+              </div>
+              <div>
+                <h2 class="card-title">Range of Motion</h2>
+                <p class="card-subtitle">Computed joint angles</p>
+              </div>
+            </div>
+          </div>
+          <div class="rom-grid">
+            <div class="rom-item">
+              <span class="rom-label">Pitch (X)</span>
+              <div class="rom-arc-wrap">
+                <svg class="rom-arc" viewBox="0 0 80 50">
+                  <path d="M 5 45 A 37 37 0 0 1 75 45" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+                  <path d="M 5 45 A 37 37 0 0 1 75 45" fill="none" stroke="#00d4ff" stroke-width="8"
+                    stroke-dasharray="116" stroke-dashoffset="116" id="pitchArc"/>
+                </svg>
+                <span class="rom-value mono" id="pitchVal">0°</span>
+              </div>
+            </div>
+            <div class="rom-item">
+              <span class="rom-label">Roll (Y)</span>
+              <div class="rom-arc-wrap">
+                <svg class="rom-arc" viewBox="0 0 80 50">
+                  <path d="M 5 45 A 37 37 0 0 1 75 45" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+                  <path d="M 5 45 A 37 37 0 0 1 75 45" fill="none" stroke="#a855f7" stroke-width="8"
+                    stroke-dasharray="116" stroke-dashoffset="116" id="rollArc"/>
+                </svg>
+                <span class="rom-value mono" id="rollVal">0°</span>
+              </div>
+            </div>
+            <div class="rom-item">
+              <span class="rom-label">Yaw (Z)</span>
+              <div class="rom-arc-wrap">
+                <svg class="rom-arc" viewBox="0 0 80 50">
+                  <path d="M 5 45 A 37 37 0 0 1 75 45" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+                  <path d="M 5 45 A 37 37 0 0 1 75 45" fill="none" stroke="#f59e0b" stroke-width="8"
+                    stroke-dasharray="116" stroke-dashoffset="116" id="yawArc"/>
+                </svg>
+                <span class="rom-value mono" id="yawVal">0°</span>
+              </div>
+            </div>
+          </div>
+          <div class="rom-alert hidden" id="romAlert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span id="romAlertText">Motion limit exceeded</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: LIVE CHARTS ──────────────────────────────────────────── -->
+    <section class="page" id="page-live">
+      <div class="page-header">
+        <h1>Live Charts</h1>
+        <div class="page-meta">
+          <select class="time-select" id="timeWindow">
+            <option value="10">10s window</option>
+            <option value="30" selected>30s window</option>
+            <option value="60">60s window</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h2>Accelerometer (g)</h2>
+            <div class="chart-legend">
+              <span class="legend-dot" style="background:#ef4444"></span><span>X</span>
+              <span class="legend-dot" style="background:#22c55e"></span><span>Y</span>
+              <span class="legend-dot" style="background:#3b82f6"></span><span>Z</span>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="accelChart"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <h2>Gyroscope (°/s)</h2>
+            <div class="chart-legend">
+              <span class="legend-dot" style="background:#f97316"></span><span>X</span>
+              <span class="legend-dot" style="background:#a855f7"></span><span>Y</span>
+              <span class="legend-dot" style="background:#06b6d4"></span><span>Z</span>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="gyroChart"></canvas></div>
+        </div>
+
+        <div class="chart-card chart-card-half">
+          <div class="chart-card-header">
+            <h2>Temperature (°C)</h2>
+          </div>
+          <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+        </div>
+
+        <div class="chart-card chart-card-half">
+          <div class="chart-card-header">
+            <h2>Range of Motion (°)</h2>
+            <div class="chart-legend">
+              <span class="legend-dot" style="background:#00d4ff"></span><span>Pitch</span>
+              <span class="legend-dot" style="background:#a855f7"></span><span>Roll</span>
+              <span class="legend-dot" style="background:#f59e0b"></span><span>Yaw</span>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="romChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: SESSION ─────────────────────────────────────────────── -->
+    <section class="page" id="page-session">
+      <div class="page-header">
+        <h1>Session Recording</h1>
+      </div>
+
+      <div class="session-layout">
+        <div class="session-panel">
+          <div class="session-control-card">
+            <div class="session-status-display">
+              <div class="session-icon-wrap" id="sessionIconWrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="sessionIcon"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              </div>
+              <div class="session-info">
+                <h2 id="sessionStateLabel">Ready to Record</h2>
+                <p id="sessionStateDesc">Press Start to begin monitoring patient session</p>
+              </div>
+            </div>
+            <div class="session-timer-display">
+              <span class="session-timer-label">Session Duration</span>
+              <span class="session-timer mono" id="sessionTimer">00:00:00</span>
+            </div>
+            <div class="session-controls">
+              <button class="btn-record" id="recordBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                Start Recording
+              </button>
+              <button class="btn-stop hidden" id="stopBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+                Stop & Save
+              </button>
+            </div>
+          </div>
+
+          <!-- Patient Details Form -->
+          <div class="session-form-card">
+            <h3 class="form-title">Patient Details</h3>
+            <div class="form-group">
+              <label class="form-label" for="patientNameInput">Patient Name / ID</label>
+              <input type="text" class="form-input" id="patientNameInput" placeholder="e.g., Patient #001 or John D." />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="exerciseType">Exercise Type</label>
+              <select class="form-select" id="exerciseType">
+                <option>Knee Flexion / Extension</option>
+                <option>Shoulder Abduction</option>
+                <option>Wrist Rotation</option>
+                <option>Ankle Dorsiflexion</option>
+                <option>Hip Rotation</option>
+                <option>Spinal Flexion</option>
+                <option>Custom Exercise</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sessionNotes">Notes</label>
+              <textarea class="form-textarea" id="sessionNotes" rows="3" placeholder="Clinical observations..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session Live Mini Charts -->
+        <div class="session-charts-panel">
+          <div class="session-stats-row">
+            <div class="session-stat-card">
+              <span class="sstat-label">Data Points</span>
+              <span class="sstat-value mono" id="sDataPoints">0</span>
+            </div>
+            <div class="session-stat-card">
+              <span class="sstat-label">Max Accel</span>
+              <span class="sstat-value mono" id="sMaxAccel">0.00 g</span>
+            </div>
+            <div class="session-stat-card">
+              <span class="sstat-label">Max Gyro</span>
+              <span class="sstat-value mono" id="sMaxGyro">0.0 °/s</span>
+            </div>
+            <div class="session-stat-card">
+              <span class="sstat-label">Avg Temp</span>
+              <span class="sstat-value mono" id="sAvgTemp">--.- °C</span>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><h2>Session Accelerometer</h2></div>
+            <div class="chart-wrap"><canvas id="sessionAccelChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><h2>Session Gyroscope</h2></div>
+            <div class="chart-wrap"><canvas id="sessionGyroChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: HISTORY ─────────────────────────────────────────────── -->
+    <section class="page" id="page-history">
+      <div class="page-header">
+        <h1>Session History</h1>
+        <div class="page-meta">
+          <button class="btn-secondary" id="clearHistoryBtn">Clear All</button>
+        </div>
+      </div>
+
+      <div id="historyEmpty" class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <h2>No sessions recorded yet</h2>
+        <p>Start a session from the Session tab to see history here.</p>
+      </div>
+
+      <div class="history-list" id="historyList"></div>
+
+      <!-- Session Playback Modal -->
+      <div class="modal-overlay hidden" id="playbackModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h2 class="modal-title" id="playbackTitle">Session Playback</h2>
+            <button class="modal-close" id="playbackClose">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="playback-meta" id="playbackMeta"></div>
+            <div class="chart-card">
+              <div class="chart-card-header"><h2>Accelerometer</h2></div>
+              <div class="chart-wrap"><canvas id="playbackAccelChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-header"><h2>Gyroscope</h2></div>
+              <div class="chart-wrap"><canvas id="playbackGyroChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-header"><h2>Temperature</h2></div>
+              <div class="chart-wrap"><canvas id="playbackTempChart"></canvas></div>
+            </div>
+            <button class="btn-primary" id="downloadCsvBtn" style="width:100%;margin-top:1rem;">
+              ⬇ Download CSV
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: SETTINGS ────────────────────────────────────────────── -->
+    <section class="page" id="page-settings">
+      <div class="page-header">
+        <h1>Settings</h1>
+      </div>
+
+      <div class="settings-grid">
+        <!-- Connection Settings -->
+        <div class="settings-card">
+          <h2 class="settings-title">Connection</h2>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Connection Mode</span>
+              <span class="setting-desc">WiFi WebSocket or Web Bluetooth BLE</span>
+            </div>
+            <div class="toggle-group" id="connModeToggle">
+              <button class="toggle-btn active" data-mode="wifi">WiFi</button>
+              <button class="toggle-btn" data-mode="ble">BLE</button>
+            </div>
+          </div>
+          <div class="setting-row" id="wifiSettings">
+            <div class="setting-info">
+              <span class="setting-label">WebSocket URL</span>
+              <span class="setting-desc">ws://192.168.4.1:81 (default AP)</span>
+            </div>
+            <input type="text" class="form-input" id="wsUrl" value="ws://192.168.4.1:81" style="max-width:240px" />
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Auto-Reconnect</span>
+              <span class="setting-desc">Reconnect on connection loss</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="autoReconnect" checked />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <button class="btn-primary" id="connectBtn" style="width:100%">Connect to ESP32</button>
+          </div>
+          <div class="setting-row">
+            <button class="btn-secondary" id="calibrateBtn" style="width:100%">Recalibrate Gyroscope</button>
+          </div>
+        </div>
+
+        <!-- Display Settings -->
+        <div class="settings-card">
+          <h2 class="settings-title">Display</h2>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Chart Buffer Size</span>
+              <span class="setting-desc">Data points to display in charts</span>
+            </div>
+            <select class="form-select" id="bufferSize" style="max-width:120px">
+              <option value="100">100 pts</option>
+              <option value="200" selected>200 pts</option>
+              <option value="500">500 pts</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Motion Alert Threshold</span>
+              <span class="setting-desc">Gyro magnitude to trigger alert (°/s)</span>
+            </div>
+            <input type="number" class="form-input" id="motionThreshold" value="100" min="10" max="250" style="max-width:100px"/>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-label">Temperature Alert</span>
+              <span class="setting-desc">Alert above this temp (°C)</span>
+            </div>
+            <input type="number" class="form-input" id="tempThreshold" value="40" min="30" max="50" style="max-width:100px"/>
+          </div>
+        </div>
+
+        <!-- Device Info -->
+        <div class="settings-card" id="deviceInfoCard">
+          <h2 class="settings-title">Device Information</h2>
+          <div class="device-info-grid">
+            <div class="dinfo-row"><span class="dinfo-label">Device</span><span class="dinfo-val mono" id="dDevice">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Firmware</span><span class="dinfo-val mono" id="dFirmware">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">MAC Address</span><span class="dinfo-val mono" id="dMAC">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">AP IP</span><span class="dinfo-val mono" id="dIP">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Sensor</span><span class="dinfo-val mono" id="dSensor">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Uptime</span><span class="dinfo-val mono" id="dUptime">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Free Heap</span><span class="dinfo-val mono" id="dHeap">—</span></div>
+          </div>
+          <button class="btn-secondary" id="refreshDeviceInfo" style="width:100%;margin-top:1rem">Refresh Info</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: ABOUT ────────────────────────────────────────────────── -->
+    <section class="page" id="page-about">
+      <div class="page-header">
+        <h1>About PhysioPulse</h1>
+      </div>
+      <div class="about-layout">
+        <div class="about-hero">
+          <div class="about-logo">
+            <svg viewBox="0 0 80 80" fill="none">
+              <circle cx="40" cy="40" r="38" stroke="url(#aboutGrad)" stroke-width="2"/>
+              <path d="M16 40 L25 26 L34 44 L43 18 L52 33 L64 40" stroke="url(#aboutGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="aboutGrad" x1="16" y1="18" x2="64" y2="62" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#00d4ff"/>
+                  <stop offset="100%" stop-color="#7c3aed"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <h2 class="about-title">PhysioPulse</h2>
+          <p class="about-version">v1.0.0 · MYOSA 6.0 Prototype</p>
+          <p class="about-desc">Real-time physiotherapy monitoring system using MYOSA ESP32 hardware and MPU-6050 (GY-521) sensor for accelerometer, gyroscope, and temperature data visualization.</p>
+        </div>
+
+        <div class="about-cards">
+          <div class="about-info-card">
+            <h3>Hardware</h3>
+            <ul>
+              <li><span class="label">MCU:</span> MYOSA ESP32-WROVER (WiFi + BLE)</li>
+              <li><span class="label">Sensor:</span> MYOSA MPU-6050 / GY-521</li>
+              <li><span class="label">I2C Address:</span> 0x69</li>
+              <li><span class="label">Axes:</span> Accel 3-axis ± 2g, Gyro 3-axis ± 250°/s</li>
+              <li><span class="label">Sample Rate:</span> 20 Hz (configurable)</li>
+            </ul>
+          </div>
+          <div class="about-info-card">
+            <h3>Technology</h3>
+            <ul>
+              <li><span class="label">Frontend:</span> Vanilla HTML5 + CSS3 + JavaScript</li>
+              <li><span class="label">Charts:</span> Chart.js v4</li>
+              <li><span class="label">Protocol:</span> WebSocket (WiFi) + Web BLE</li>
+              <li><span class="label">Storage:</span> IndexedDB (session history)</li>
+              <li><span class="label">PWA:</span> Installable on any device</li>
+            </ul>
+          </div>
+          <div class="about-info-card">
+            <h3>Connection Guide</h3>
+            <ol>
+              <li>Power on the MYOSA ESP32 board</li>
+              <li>Connect your phone/PC WiFi to <strong>PhysioPulse-XXXX</strong></li>
+              <li>Password: <code>physio123</code></li>
+              <li>Open browser → <strong>http://192.168.4.1</strong></li>
+              <li>Or go to Settings and press <strong>Connect</strong></li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="about-footer">
+          <p>Built for <strong>MYOSA 6.0 Competition</strong> – Stage 2 Working Prototype</p>
+          <p>Using MakeSense EduTech MYOSA hardware platform</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══ TOAST NOTIFICATIONS ═══════════════════════════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══ SCRIPTS ════════════════════════════════════════════════════════════ -->
+<script src="/js/connection.js"></script>
+<script src="/js/charts.js"></script>
+<script src="/js/session.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

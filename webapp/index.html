@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="description" content="PhysioPulse – Real-time physiotherapy monitoring dashboard for accelerometer, gyroscope and temperature data from MYOSA ESP32 sensor." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PhysioPulse" />
+  <title>PhysioPulse – Physiotherapy Monitor</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=2" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ═══ SPLASH SCREEN ═══════════════════════════════════════════════════ -->
+<div id="splash-screen" class="splash">
+  <div class="splash-content">
+    <div class="splash-logo">
+      <div class="splash-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="30" stroke="url(#splashGrad)" stroke-width="2"/>
+          <path d="M12 32 L20 20 L28 36 L36 14 L44 28 L52 32" stroke="url(#splashGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="splashGrad" x1="12" y1="14" x2="52" y2="50" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00d4ff"/>
+              <stop offset="100%" stop-color="#7c3aed"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="splash-title">PhysioPulse</h1>
+      <p class="splash-subtitle">Physiotherapy Monitoring System</p>
+      <p class="splash-team">MYOSA 6.0 Prototype</p>
+    </div>
+    <div class="splash-loader">
+      <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+      <p class="loader-text" id="loaderText">Initializing...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTH SCREENS ═══════════════════════════════════════════════════════ -->
+<div id="auth-screen" class="auth-screen hidden">
+  <!-- Login Page -->
+  <div id="auth-login" class="auth-card">
+    <div class="auth-logo">
+      <svg viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="22" stroke="url(#authGrad)" stroke-width="1.5"/>
+        <path d="M10 24 L16 16 L22 28 L28 10 L34 22 L40 24" stroke="url(#authGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="authGrad" x1="10" y1="10" x2="40" y2="38" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00d4ff"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div>
+        <h1 class="auth-brand">PhysioPulse</h1>
+        <p class="auth-brand-sub">MYOSA 6.0</p>
+      </div>
+    </div>
+    <h2 class="auth-title">Welcome Back</h2>
+    <p class="auth-subtitle">Sign in to your account</p>
+
+    <div id="loginError" class="auth-error hidden"></div>
+
+    <div class="form-group">
+      <label class="form-label" for="loginUserId">Email or Patient ID</label>
+      <input type="text" class="form-input" id="loginUserId" placeholder="e.g. DR123456" autocomplete="username" style="text-transform:uppercase" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="loginPassword">Password</label>
+      <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="btn-primary auth-submit" id="loginBtn">
+      <span id="loginBtnText">Sign In</span>
+      <span id="loginBtnLoader" class="btn-loader hidden">⟳</span>
+    </button>
+    <p class="auth-switch" style="font-size:0.8rem; opacity:0.6; margin-top:1.5rem">
+      🔒 Doctor and Patient accounts are provisioned directly by the company.
+    </p>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══════════════════════════════════════════════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- ─── SIDEBAR NAVIGATION ──────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke="url(#navGrad)" stroke-width="1.5"/>
+            <path d="M8 20 L13 13 L18 22 L23 9 L28 17 L32 20" stroke="url(#navGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="navGrad" x1="8" y1="9" x2="32" y2="31" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#00d4ff"/>
+                <stop offset="100%" stop-color="#7c3aed"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">PhysioPulse</span>
+          <span class="brand-tag">MYOSA 6.0</span>
+        </div>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">✕</button>
+    </div>
+
+    <!-- Connection Status in sidebar -->
+    <div class="sidebar-connection">
+      <div class="conn-dot" id="sidebarConnDot"></div>
+      <span class="conn-label" id="sidebarConnLabel">Disconnected</span>
+    </div>
+
+    <!-- User info in sidebar -->
+    <div class="sidebar-user" id="sidebarUser">
+      <div class="sidebar-user-avatar" id="sidebarUserAvatar">?</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebarUserName">—</div>
+        <div class="sidebar-user-role" id="sidebarUserRole">—</div>
+      </div>
+    </div>
+
+    <!-- DOCTOR NAV -->
+    <nav class="sidebar-nav" id="nav-doctor" style="display:none">
+      <a href="#" class="nav-item active" data-page="doctor-dashboard" id="nav-doctor-dashboard">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+        <span class="nav-label">Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="doctor-patients" id="nav-doctor-patients">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span class="nav-label">My Patients</span>
+      </a>
+
+      <a href="#" class="nav-item" data-page="settings" id="nav-settings-doctor">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </nav>
+
+    <!-- PATIENT NAV -->
+    <nav class="sidebar-nav" id="nav-patient" style="display:none">
+      <a href="#" class="nav-item active" data-page="patient-dashboard" id="nav-patient-dashboard">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+        <span class="nav-label">My Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="patient-exercise" id="nav-patient-exercise">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></span>
+        <span class="nav-label">Exercise</span>
+      </a>
+      <a href="#" class="nav-item" data-page="patient-history" id="nav-patient-history">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+        <span class="nav-label">My History</span>
+      </a>
+      
+      <a href="#" class="nav-item" data-page="settings" id="nav-settings-patient">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" id="logoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </button>
+      <div class="hw-badge">
+        <span class="hw-dot"></span>
+        <span>ESP32 + MPU-6050</span>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ─── MAIN CONTENT ─────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <button class="topbar-menu" id="menuBtn" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="role-badge" id="roleBadge"></div>
+        <div class="connection-badge" id="connBadge">
+          <div class="conn-pulse" id="connPulse"></div>
+          <span id="connStatus">Disconnected</span>
+        </div>
+        <div class="live-indicator hidden" id="liveIndicator">
+          <span class="live-dot"></span>
+          <span>LIVE</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- ═══ DOCTOR PAGES ════════════════════════════════════════════════ -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── DOCTOR: DASHBOARD ─────────────────────────────────────────── -->
+    <section class="page" id="page-doctor-dashboard">
+      <div class="page-header">
+        <h1>Doctor Dashboard</h1>
+        <div class="page-meta">
+          <span class="doctor-code-badge">Your User ID: <strong id="doctorCode">—</strong></span>
+        </div>
+      </div>
+
+      <div class="doctor-welcome-bar">
+        <div class="doctor-avatar-wrap">
+          <div class="doctor-avatar">🩺</div>
+          <div>
+            <div class="doctor-welcome-name">Dr. <span id="doctorName">—</span></div>
+            <div class="doctor-welcome-sub">Share your User ID with patients to link them to your account</div>
+          </div>
+        </div>
+        <div class="doctor-stats-row">
+          <div class="doctor-stat-card">
+            <span class="ds-val" id="doctorPatientCount">0</span>
+            <span class="ds-label">Patients</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pain & Limitation Alerts Panel -->
+      <div class="section-title" style="display:flex;align-items:center;gap:0.5rem">
+        <span>🚨 Patient Discomfort & Limitation Alerts</span>
+        <span class="badge-count hidden" id="doctorPainBadge">0</span>
+      </div>
+      <div class="alerts-panel pain-alerts-panel" id="doctorPainAlertsList">
+        <div class="empty-mini">No pain alerts reported ✓</div>
+      </div>
+
+      <!-- General Activity Alerts Panel -->
+      <div class="section-title" style="margin-top:1.5rem">Recent Activity & Compliance Alerts</div>
+      <div class="alerts-panel" id="doctorAlertsList">
+        <div class="empty-mini">Loading...</div>
+      </div>
+
+      <!-- Patient Cards -->
+      <div class="section-title" style="margin-top:2rem">My Patients
+        <button class="btn-primary btn-sm" id="doctorAddPatientBtn" style="margin-left:auto">➕ Add New Patient</button>
+        <button class="btn-secondary btn-sm" onclick="App.navigateTo('doctor-patients')">View All</button>
+      </div>
+      <div class="patient-cards-grid" id="doctorPatientCards"></div>
+    </section>
+
+    <!-- ── DOCTOR: PATIENTS LIST ──────────────────────────────────────── -->
+    <section class="page" id="page-doctor-patients">
+      <div class="page-header">
+        <h1>My Patients</h1>
+        <button class="btn-primary btn-sm" id="doctorAddPatientBtn2" style="margin-left:auto">➕ Add New Patient</button>
+        <div class="page-meta">
+          <span class="doctor-code-badge">User ID: <strong id="doctorCodePatients">—</strong></span>
+        </div>
+      </div>
+      <div class="patient-cards-grid" id="doctorPatientCardsFull"></div>
+    </section>
+
+    <!-- ── DOCTOR: PATIENT DETAIL + THRESHOLD FORM ───────────────────── -->
+    <section class="page" id="page-doctor-patient">
+      <div class="page-header">
+        <button class="btn-secondary btn-sm" id="backToPatients">← Back to Patients</button>
+        <h1 id="dpPatientName">Patient</h1>
+      </div>
+
+      <div class="dp-layout">
+        <!-- Left: patient profile + threshold form -->
+        <div class="dp-left">
+
+          <!-- Patient Profile Card -->
+          <div class="settings-card">
+            <h2 class="settings-title">Patient Profile</h2>
+            <div class="dp-profile-info">
+                            <div class="dp-profile-row"><span class="dp-profile-label">Patient ID (Login)</span><span class="dp-profile-val" id="dpPatientCode" style="font-family:monospace; color:#00d4ff">—</span></div>
+              <div class="dp-profile-row"><span class="dp-profile-label">Age</span><span class="dp-profile-val" id="dpPatientAge">—</span></div>
+              <div class="dp-profile-row"><span class="dp-profile-label">Condition</span><span class="dp-profile-val" id="dpPatientCondition">—</span></div>
+              <div class="dp-profile-row"><span class="dp-profile-label">Sessions</span><span class="dp-profile-val" id="dpSessionCount">0</span></div>
+              <div class="dp-profile-row"><span class="dp-profile-label">Compliance</span><span class="dp-profile-val" id="dpCompliance">—</span></div>
+            </div>
+            <hr class="divider" />
+            <h3 class="form-title" style="margin-bottom:1rem">Edit Profile</h3>
+            <form id="patientProfileForm">
+              <div class="form-group">
+                <label class="form-label" for="dpEditName">Name</label>
+                <input type="text" class="form-input" id="dpEditName" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dpEditAge">Age</label>
+                <input type="number" class="form-input" id="dpEditAge" min="1" max="120" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dpEditCondition">Condition / Diagnosis</label>
+                <input type="text" class="form-input" id="dpEditCondition" placeholder="e.g. ACL Tear, Shoulder Injury" />
+              </div>
+              <button type="button" class="btn-secondary" id="patientProfileSaveBtn" style="width:100%">Save Profile</button>
+            
+            <h3 class="form-title" style="margin-bottom:1rem;margin-top:1.5rem">Account Security</h3>
+            <div style="display:flex; gap:0.5rem">
+                <input type="text" class="form-input" id="dpResetPasswordInput" placeholder="New Password" />
+                <button type="button" class="btn-secondary" id="dpResetPasswordBtn">Reset Password</button>
+            </div>
+
+          </div>
+
+          <!-- Threshold Form -->
+          <div class="settings-card" style="margin-top:1.5rem">
+            <h2 class="settings-title">Exercise Thresholds</h2>
+            <p class="settings-desc">Set the safe angle range and exercise targets for this patient. These will be used to alert the patient during home exercise sessions.</p>
+            <form id="thresholdForm">
+              <div class="form-group">
+                <label class="form-label" for="dpExerciseType">Exercise Type (Hand & Arm)</label>
+                <select class="form-select" id="dpExerciseType">
+                  <option value="Bicep Curl">Bicep Curl</option>
+                  <option value="Front Shoulder Raise">Front Shoulder Raise</option>
+                  <option value="Side Shoulder Raise">Side Shoulder Raise</option>
+                  <option value="Lower Leg Raise">Lower Leg Raise</option>
+                  <option value="Hand Circular Movement">Hand Circular Movement</option>
+                  <option value="Wrist Circumduction">Wrist Circumduction</option>
+                </select>
+              </div>
+              
+              <div class="settings-card" style="margin-top:1rem;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2)">
+                <h3 style="font-size:1rem;margin-bottom:0.35rem;color:#00d4ff">🎯 3D Biomechanical Calibration & Baseline</h3>
+                <p style="font-size:0.8rem;color:rgba(255,255,255,0.6);margin-bottom:0.75rem">
+                  Perform 2-step coordinate calibration, then record 15s baseline to calculate exact ROM & sway limits.
+                </p>
+
+                <!-- Live Status & Angles -->
+                <div style="display:flex;justify-content:space-between;background:rgba(0,0,0,0.25);padding:0.6rem 0.8rem;border-radius:6px;margin-bottom:0.75rem;font-size:0.85rem">
+                  <div>Live Angle: <span class="mono text-cyan" id="dpLiveAngle">0.0°</span></div>
+                  <div>Sway Error: <span class="mono" id="dpTwistError" style="color:#f59e0b">0.0°</span></div>
+                  <div>Status: <span id="dpCalibStatus" style="color:#38bdf8;font-weight:600">Awaiting Step 1</span></div>
+                </div>
+
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                  <button type="button" class="btn-secondary btn-sm" id="dpCalStep1Btn" style="flex:1;min-width:120px;background:#1e293b">1. Set Resting</button>
+                  <button type="button" class="btn-secondary btn-sm" id="dpCalStep2Btn" style="flex:1;min-width:140px;background:#1e293b">2. Set Raised (Direction)</button>
+                  <button type="button" class="btn-secondary btn-sm" id="dpRecordBaselineBtn" style="flex:1.2;min-width:160px;background:rgba(168,85,247,0.25);border-color:#a855f7;color:#fff;font-weight:600">3. Record 15s Baseline</button>
+                </div>
+              </div>
+
+              <div class="thresh-grid">
+                <div class="form-group">
+                  <label class="form-label" for="dpMinAngle">Min Angle (°) <span class="form-hint">target minimum flexion</span></label>
+                  <input type="number" class="form-input" id="dpMinAngle" value="30" min="0" max="180" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="dpMaxAngle">Max Angle (°) <span class="form-hint">safe upper limit</span></label>
+                  <input type="number" class="form-input" id="dpMaxAngle" value="120" min="0" max="180" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="dpTargetReps">Target Reps <span class="form-hint">per session</span></label>
+                  <input type="number" class="form-input" id="dpTargetReps" value="10" min="1" max="100" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="dpMotionLimit">Motion Limit (°/s) <span class="form-hint">gyro alert</span></label>
+                  <input type="number" class="form-input" id="dpMotionLimit" value="100" min="10" max="500" />
+                </div>
+                
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dpVideoUrl">YouTube Exercise Demo URL <span class="form-hint">plays directly in patient app</span></label>
+                <input type="url" class="form-input" id="dpVideoUrl" placeholder="https://www.youtube.com/watch?v=kYJjT6lYqA8" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dpNotes">Clinical Notes & Instructions</label>
+                <textarea class="form-textarea" id="dpNotes" rows="2" placeholder="e.g. Focus on gentle movement. Stop immediately if pain exceeds 4/10."></textarea>
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);padding:0.75rem 1rem;border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem">Strict Limit Enforcement</div>
+                  <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Freeze reps and sound caution when exceeding Max Angle or Target Reps</div>
+                </div>
+                <label class="switch"><input type="checkbox" id="dpStrictLimit" checked /><span class="switch-slider"></span></label>
+              </div>
+              <button type="button" class="btn-primary" id="thresholdSaveBtn" style="width:100%;margin-top:1rem">
+                💾 Save Thresholds & Prescription
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right: history + threshold history -->
+        <div class="dp-right">
+          <!-- Exercise History -->
+          <div class="settings-card">
+            <h2 class="settings-title">Exercise History</h2>
+            <div id="dpHistoryTable"><div class="empty-mini">Loading...</div></div>
+          </div>
+
+          <!-- Threshold Change History -->
+          <div class="settings-card" style="margin-top:1.5rem">
+            <h2 class="settings-title">Threshold History</h2>
+            <p class="settings-desc">All previous threshold settings for this patient.</p>
+            <div id="dpThresholdHistory"><div class="empty-mini">No changes yet</div></div>
+          </div>
+
+          <div class="settings-card" style="margin-top:1.5rem">
+            <h2 class="settings-title">Exercise Prescriptions (YouTube)</h2>
+            <form id="prescriptionForm">
+              <div class="form-group">
+                <label class="form-label" for="dpVideoTitle">Video Title</label>
+                <input type="text" class="form-input" id="dpVideoTitle" placeholder="e.g. Knee Mobility Routine" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dpVideoUrl">YouTube URL</label>
+                <input type="url" class="form-input" id="dpVideoUrl" placeholder="https://www.youtube.com/watch?v=..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="dpVideoNotes">Notes</label>
+                <textarea class="form-textarea" id="dpVideoNotes" rows="2" placeholder="Usage notes for patient"></textarea>
+              </div>
+              <button type="button" class="btn-primary" id="prescriptionSaveBtn" style="width:100%">Add / Update Prescription</button>
+            </form>
+            <hr class="divider" />
+            <div id="dpPrescriptionList"><div class="empty-mini">No exercise videos assigned yet</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- ═══ PATIENT PAGES ═══════════════════════════════════════════════ -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── PATIENT: DASHBOARD ────────────────────────────────────────── -->
+    <section class="page" id="page-patient-dashboard">
+      <div class="page-header">
+        <h1>My Dashboard</h1>
+        <div class="page-meta">
+          <button class="btn-secondary btn-sm" id="ptRefreshThreshold">↻ Sync Thresholds</button>
+        </div>
+      </div>
+
+      <!-- Patient welcome -->
+      <div class="patient-welcome-bar">
+        <div class="patient-welcome-left">
+          <div class="patient-welcome-avatar" id="ptAvatarLetter">P</div>
+          <div>
+            <div class="patient-welcome-name" id="ptPatientName">—</div>
+            <div class="patient-welcome-sub">Assigned Doctor: <span id="ptDoctorInfo">—</span></div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="App.navigateTo('patient-exercise')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Start Exercise
+        </button>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="pt-stats-row">
+        <div class="pt-stat-card">
+          <span class="pts-val" id="ptTotalSessions">0</span>
+          <span class="pts-label">Sessions</span>
+        </div>
+        <div class="pt-stat-card">
+          <span class="pts-val" id="ptCompliance">—</span>
+          <span class="pts-label">Compliance</span>
+        </div>
+        <div class="pt-stat-card">
+          <span class="pts-val" id="ptLastSession">—</span>
+          <span class="pts-label">Last Session</span>
+        </div>
+      </div>
+
+      <!-- Threshold Info Card -->
+      <div class="threshold-display-card" id="ptThreshCard">
+        <div class="tdc-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Your Exercise Prescription</span>
+          <span class="tdc-type" id="ptExercise">—</span>
+        </div>
+        <div class="tdc-grid">
+          <div class="tdc-item">
+            <span class="tdc-label">Min Angle</span>
+            <span class="tdc-val" id="ptMinAngle">—</span>
+          </div>
+          <div class="tdc-item">
+            <span class="tdc-label">Max Angle</span>
+            <span class="tdc-val" id="ptMaxAngle">—</span>
+          </div>
+          <div class="tdc-item">
+            <span class="tdc-label">Target Reps</span>
+            <span class="tdc-val" id="ptTargetReps">—</span>
+          </div>
+          
+          
+        </div>
+
+        <div class="settings-card" style="margin-top:1rem">
+          <h2 class="settings-title">Doctor Assigned Exercise Videos</h2>
+          <div id="ptPrescriptionList"><div class="empty-mini">No exercise videos assigned yet</div></div>
+        </div>
+      </div>
+
+      <!-- No threshold state -->
+      <div class="no-thresh-card" id="ptNoThresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>No Exercise Prescription Yet</h3>
+        <p>Your doctor hasn't set your exercise thresholds yet. Please visit your doctor for your initial assessment, or click "Sync Thresholds" if your doctor has already entered them.</p>
+      </div>
+
+      
+    </section>
+
+    <!-- ── PATIENT: EXERCISE PAGE ─────────────────────────────────────── -->
+    <section class="page" id="page-patient-exercise">
+      <div class="page-header">
+        <h1>Exercise Session</h1>
+        <div class="page-meta" style="display:flex;gap:0.75rem;align-items:center">
+          <button class="btn-secondary btn-sm" id="ptQuickBleBtn" style="display:flex;align-items:center;gap:0.35rem">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+            Connect BLE Sensor
+          </button>
+          <span class="exercise-timer mono" id="ptExerciseTimer">00:00</span>
+        </div>
+      </div>
+
+      <div class="exercise-layout">
+        <!-- Rep Counter + Controls -->
+        <div class="exercise-control-panel">
+          <!-- Axis Calibration Box -->
+          <div class="settings-card" style="margin-bottom:1.25rem;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+              <h3 style="font-size:0.95rem;margin:0;color:#00d4ff">📐 Axis Calibration (Before Exercise)</h3>
+              <span id="ptCalibBadge" style="font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:12px;background:rgba(234,179,8,0.15);color:#facc15;font-weight:600">Step 1 Needed</span>
+            </div>
+            <p style="font-size:0.78rem;color:rgba(255,255,255,0.6);margin-bottom:0.75rem">
+              Calibrate sensor orientation for your current arm/leg position before starting your reps.
+            </p>
+            <div style="display:flex;gap:0.5rem">
+              <button type="button" class="btn-secondary btn-sm" id="ptCalStep1Btn" style="flex:1">1. Set Resting</button>
+              <button type="button" class="btn-secondary btn-sm" id="ptCalStep2Btn" style="flex:1">2. Set Raised</button>
+            </div>
+          </div>
+
+          <!-- Big Rep Ring -->
+          <div class="rep-ring-wrap">
+            <svg class="rep-ring" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="10"/>
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="10"
+                stroke-dasharray="339.29" stroke-dashoffset="339.29"
+                stroke-linecap="round" id="repProgressRing"
+                style="transition:stroke-dashoffset 0.4s ease, stroke 0.4s ease; transform-origin:60px 60px; transform:rotate(-90deg)"/>
+            </svg>
+            <div class="rep-ring-inner">
+              <span class="rep-count-big mono" id="ptRepCountBig">0</span>
+              <span class="rep-count-label">reps</span>
+            </div>
+          </div>
+
+          <!-- Exercise Info Banner -->
+          <div class="exercise-info-banner">
+            <div class="eib-item">
+              <span class="eib-label">Target</span>
+              <span class="eib-val" id="ptExerciseTarget">— reps</span>
+            </div>
+            <div class="eib-item">
+              <span class="eib-label">Exercise</span>
+              <span class="eib-val" id="ptExerciseName">—</span>
+            </div>
+            <div class="eib-item">
+              <span class="eib-label">Range</span>
+              <span class="eib-val" id="ptExerciseRange">—° – —°</span>
+            </div>
+          </div>
+
+          <!-- Live stats during exercise -->
+          <div class="exercise-live-stats">
+            <div class="els-item">
+              <span class="els-label">Live Movement Angle</span>
+              <span class="els-val mono text-cyan" id="ptLivePitch">0.0°</span>
+            </div>
+            <div class="els-item">
+              <span class="els-label">Reps Completed</span>
+              <span class="els-val mono" id="ptRepCount">0</span>
+            </div>
+            <div class="els-item">
+              <span class="els-label">Form Guidance</span>
+              <span class="els-val" id="ptLiveMsg" style="font-size:0.9rem;color:#facc15">Ready</span>
+            </div>
+            <div class="els-item">
+              <span class="els-label">Motion Speed</span>
+              <span class="els-val mono" id="ptLiveGyro" style="font-size:0.9rem">0.0 °/s</span>
+            </div>
+          </div>
+
+          <!-- Critical Limit Alert Box -->
+          <div class="exercise-alert critical-alert hidden" id="ptMaxLimitAlert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            <span id="ptMaxLimitText">⛔ DOCTOR LIMIT: Maximum Angle Reached! Stop movement now.</span>
+          </div>
+
+          <!-- Alert Box -->
+          <div class="exercise-alert hidden" id="ptExerciseAlert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span id="ptExerciseAlertText">Alert</span>
+          </div>
+
+          <!-- Start / Stop Buttons -->
+          <div class="exercise-btns">
+            <button class="btn-record" id="ptStartExercise">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              Start Exercise
+            </button>
+            <button class="btn-stop hidden" id="ptStopExercise">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+              Stop & Save
+            </button>
+          </div>
+
+          <!-- Pain & Discomfort Button -->
+          <button type="button" class="btn-pain" id="ptReportPainBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            🚨 Report Pain / Can't Reach Threshold
+          </button>
+        </div>
+
+        <!-- Live Sensor Charts + Prescribed Demo -->
+        <div class="exercise-charts-panel">
+          <!-- YouTube Video Demo Card -->
+          <div class="chart-card video-card hidden" id="ptVideoDemoCard">
+            <div class="chart-card-header">
+              <h2>📹 Prescribed Exercise Demonstration</h2>
+              <span class="badge-tag">Doctor's Video</span>
+            </div>
+            <div class="video-embed-wrap" id="ptVideoEmbedWrap">
+              <iframe id="ptVideoIframe" src="" title="Exercise Demonstration" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PATIENT: HISTORY ───────────────────────────────────────────── -->
+    <section class="page" id="page-patient-history">
+      <div class="page-header">
+        <h1>Exercise History</h1>
+      </div>
+
+      <div id="ptHistoryEmpty" class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <h2>No sessions recorded yet</h2>
+        <p>Complete an exercise session to see your history here.</p>
+      </div>
+
+      <div class="history-list" id="ptHistoryList"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- ═══ SHARED PAGES ════════════════════════════════════════════════ -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+
+
+    <!-- ── PAGE: SETTINGS ────────────────────────────────────────────── -->
+    <section class="page" id="page-settings">
+      <div class="page-header"><h1>Settings</h1></div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h2 class="settings-title">Connection</h2>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">Connection Mode</span><span class="setting-desc">WiFi WebSocket or Web Bluetooth BLE</span></div>
+            <div class="toggle-group" id="connModeToggle">
+              <button class="toggle-btn" data-mode="wifi">WiFi</button>
+              <button class="toggle-btn active" data-mode="ble">BLE</button>
+            </div>
+          </div>
+          <div class="setting-row" id="wifiSettings">
+            <div class="setting-info"><span class="setting-label">WebSocket URL</span><span class="setting-desc">ws://192.168.4.1:81 (default AP)</span></div>
+            <input type="text" class="form-input" id="wsUrl" value="ws://192.168.4.1:81" style="max-width:240px" />
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">Auto-Reconnect</span><span class="setting-desc">Reconnect on connection loss</span></div>
+            <label class="switch"><input type="checkbox" id="autoReconnect" checked /><span class="switch-slider"></span></label>
+          </div>
+          <div class="setting-row"><button class="btn-primary" id="connectBtn" style="width:100%">Connect to ESP32</button></div>
+          <div class="setting-row"><button class="btn-secondary" id="calibrateBtn" style="width:100%">Recalibrate Gyroscope</button></div>
+        </div>
+        <div class="settings-card">
+          <h2 class="settings-title">Display</h2>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">Chart Buffer Size</span><span class="setting-desc">Data points to display in charts</span></div>
+            <select class="form-select" id="bufferSize" style="max-width:120px"><option value="100">100 pts</option><option value="200" selected>200 pts</option><option value="500">500 pts</option></select>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">Motion Alert Threshold</span><span class="setting-desc">Gyro magnitude to trigger alert (°/s)</span></div>
+            <input type="number" class="form-input" id="motionThreshold" value="100" min="10" max="250" style="max-width:100px"/>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><span class="setting-label">Temperature Alert</span><span class="setting-desc">Alert above this temp (°C)</span></div>
+            <input type="number" class="form-input" id="tempThreshold" value="40" min="30" max="50" style="max-width:100px"/>
+          </div>
+        </div>
+        <div class="settings-card" id="deviceInfoCard">
+          <h2 class="settings-title">Device Information</h2>
+          <div class="device-info-grid">
+            <div class="dinfo-row"><span class="dinfo-label">Device</span><span class="dinfo-val mono" id="dDevice">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Firmware</span><span class="dinfo-val mono" id="dFirmware">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">MAC Address</span><span class="dinfo-val mono" id="dMAC">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">AP IP</span><span class="dinfo-val mono" id="dIP">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Sensor</span><span class="dinfo-val mono" id="dSensor">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Uptime</span><span class="dinfo-val mono" id="dUptime">—</span></div>
+            <div class="dinfo-row"><span class="dinfo-label">Free Heap</span><span class="dinfo-val mono" id="dHeap">—</span></div>
+          </div>
+          <button class="btn-secondary" id="refreshDeviceInfo" style="width:100%;margin-top:1rem">Refresh Info</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══ TOAST NOTIFICATIONS ═══════════════════════════════════════════════ -->
+<div class="toast-container" id="toastContainer"></div>
+
+
+<!-- ═══ ADD NEW PATIENT MODAL ═════════════════════════════════════════════ -->
+<div id="addPatientModal" class="modal hidden">
+  <div class="modal-card" style="max-width: 480px;">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:1.4rem">🧑‍⚕️</span>
+        <h2 style="margin:0;font-size:1.2rem">Add New Patient</h2>
+      </div>
+      <button class="modal-close" id="closeAddPatientModal">✕</button>
+    </div>
+    <form id="addPatientForm">
+      <div class="modal-body" style="padding:1.5rem">
+        <div id="addPatientError" class="auth-error hidden" style="margin-bottom:1rem"></div>
+        <p style="color:rgba(255,255,255,0.7);font-size:0.875rem;margin-bottom:1.25rem;line-height:1.4">
+          Enter the patient details below. The system will automatically generate a unique <strong>Patient ID (e.g. PT-0002)</strong> which the patient will use to log in.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="addPtName">Patient Full Name *</label>
+          <input type="text" class="form-input" id="addPtName" placeholder="e.g. Robert Davis" required />
+        </div>
+
+        <div class="form-group" style="display:grid;grid-template-columns:1fr 2fr;gap:0.75rem">
+          <div>
+            <label class="form-label" for="addPtAge">Age</label>
+            <input type="number" class="form-input" id="addPtAge" placeholder="45" min="1" max="120" />
+          </div>
+          <div>
+            <label class="form-label" for="addPtCondition">Condition / Diagnosis</label>
+            <input type="text" class="form-input" id="addPtCondition" placeholder="e.g. ACL Rehab, Rotator Cuff" />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:1rem">
+          <label class="form-label" for="addPtPassword">Initial Password *</label>
+          <input type="text" class="form-input" id="addPtPassword" value="patient123" minlength="6" required />
+          <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;display:block;margin-top:0.25rem">Must be at least 6 characters. Patient can change this later.</small>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid rgba(255,255,255,0.08)">
+        <button type="button" class="btn-secondary" id="cancelAddPatientModal">Cancel</button>
+        <button type="submit" class="btn-primary" id="submitAddPatientBtn">
+          ➕ Create Patient & Generate ID
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ PATIENT CREATED CREDENTIALS POPUP MODAL ═════════════════════════════ -->
+<div id="patientCredentialsModal" class="modal hidden">
+  <div class="modal-card" style="max-width: 480px; text-align: center;">
+    <div class="modal-header" style="justify-content: center; position: relative;">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:1.6rem">🎉</span>
+        <h2 style="margin:0;font-size:1.25rem;color:#10b981">Patient Account Created!</h2>
+      </div>
+      <button class="modal-close" id="closePtCredModal" style="position:absolute;right:1rem">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.5rem">
+      <p style="color:rgba(255,255,255,0.8);font-size:0.9rem;margin-bottom:1.5rem;line-height:1.5">
+        Patient account for <strong id="ptCredName" style="color:#00d4ff"></strong> has been registered. Please share these login credentials with the patient:
+      </p>
+
+      <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;text-align:left">
+        <div style="margin-bottom:1rem">
+          <label style="font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem">Patient ID (Login ID)</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.3);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1)">
+            <span id="ptCredCode" class="mono" style="font-size:1.2rem;font-weight:700;color:#10b981;letter-spacing:1px">PT-XXXX</span>
+            <button type="button" class="btn-icon" id="copyPtCodeBtn" title="Copy Patient ID" style="padding:4px 8px;font-size:0.8rem">📋 Copy</button>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-size:0.75rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:0.25rem">Password</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.3);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1)">
+            <span id="ptCredPassword" class="mono" style="font-size:1.1rem;font-weight:600;color:#fff">patient123</span>
+            <button type="button" class="btn-icon" id="copyPtPwdBtn" title="Copy Password" style="padding:4px 8px;font-size:0.8rem">📋 Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <p style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin:0">
+        💡 The patient can enter either their <strong>Patient ID</strong> or email on the login page to access their exercise portal.
+      </p>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.5rem;display:flex;justify-content:center;gap:0.75rem;border-top:1px solid rgba(255,255,255,0.08)">
+      <button type="button" class="btn-primary" id="dismissPtCredModal" style="min-width:140px">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAIN & DISCOMFORT REPORT MODAL ════════════════════════════════════ -->
+<div id="painModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:1.4rem">🚨</span>
+        <h2 style="margin:0;font-size:1.2rem">Report Pain or Limitation</h2>
+      </div>
+      <button class="modal-close" id="closePainModal">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.5rem">
+      <p style="color:rgba(255,255,255,0.7);font-size:0.875rem;margin-bottom:1.25rem;line-height:1.4">
+        Your doctor will be notified immediately with your current angle and rep metrics so they can review your progression or adjust your limits.
+      </p>
+
+      <div class="pain-summary-badge" style="display:flex;justify-content:space-around;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);padding:0.75rem;border-radius:8px;margin-bottom:1.25rem">
+        <div>Angle at Discomfort: <strong id="painModalAngle" class="mono" style="color:#ef4444">0.0°</strong></div>
+        <div>Reps Completed: <strong id="painModalReps" class="mono" style="color:#ef4444">0</strong></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Pain Severity Level</label>
+        <div class="pain-level-selector" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem">
+          <button type="button" class="pain-level-btn active" data-level="Mild" style="padding:0.6rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;cursor:pointer">😊 Mild (1-3)</button>
+          <button type="button" class="pain-level-btn" data-level="Moderate" style="padding:0.6rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;cursor:pointer">😐 Moderate (4-6)</button>
+          <button type="button" class="pain-level-btn" data-level="Severe" style="padding:0.6rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;cursor:pointer">😣 Severe (7-10)</button>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:1rem">
+        <label class="form-label" for="painModalNotes">What are you feeling? (Optional)</label>
+        <textarea class="form-textarea" id="painModalNotes" rows="3" placeholder="e.g. Sharp pain at 65° flexion, knee stiffness, pinch in joint..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid rgba(255,255,255,0.08)">
+      <button class="btn-secondary" id="cancelPainModal">Cancel</button>
+      <button class="btn-primary" id="submitPainAlert" style="background:#ef4444;border-color:#ef4444">
+        🚨 Send Alert to Doctor
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MOTIVATIONAL POST-EXERCISE CELEBRATION MODAL ══════════════════════ -->
+<div id="motivationalModal" class="modal hidden">
+  <div class="modal-card modal-celebration" style="max-width:480px;text-align:center">
+    <div class="modal-body" style="padding:2rem">
+      <div style="font-size:3.5rem;margin-bottom:0.5rem;animation:bounce 1s infinite">🎉</div>
+      <h2 id="motivationalTitle" style="font-size:1.6rem;margin-bottom:0.25rem;color:#fff">Session Completed!</h2>
+      <div class="motivational-badge" id="motivationalBadge" style="display:inline-block;padding:0.35rem 1rem;border-radius:20px;font-weight:600;font-size:0.85rem;margin-bottom:1rem;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3)">
+        🌟 Outstanding Dedication!
+      </div>
+      
+      <p id="motivationalQuote" style="font-style:italic;color:rgba(255,255,255,0.8);font-size:0.95rem;line-height:1.5;margin-bottom:1.5rem">
+        "Every rep is a step closer to full recovery. Consistency is your superpower!"
+      </p>
+
+      <div class="session-summary-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;background:rgba(255,255,255,0.03);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.06);margin-bottom:1.5rem;text-align:left">
+        <div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Reps Completed</div>
+          <div class="mono" id="mRepsDone" style="font-size:1.25rem;font-weight:700;color:#00d4ff">0</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Max Angle Reached</div>
+          <div class="mono" id="mMaxAngle" style="font-size:1.25rem;font-weight:700;color:#22c55e">0.0°</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Session Duration</div>
+          <div class="mono" id="mDuration" style="font-size:1.25rem;font-weight:700;color:#f59e0b">0s</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Compliance Status</div>
+          <div class="mono" id="mCompliance" style="font-size:1.25rem;font-weight:700;color:#a855f7">100%</div>
+        </div>
+      </div>
+
+      <div class="recovery-tip" id="motivationalTip" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);padding:0.75rem;border-radius:8px;font-size:0.8rem;color:rgba(255,255,255,0.85);text-align:left;margin-bottom:1.5rem">
+        💡 <strong>Recovery Tip:</strong> Hydrate and gently stretch. Allow 24 hours of rest before high-intensity loading.
+      </div>
+
+      <button class="btn-primary" id="closeMotivationalBtn" style="width:100%;padding:0.85rem;font-size:1rem">
+        Great, Continue
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCRIPTS ════════════════════════════════════════════════════════════ -->
+<script src="js/api.js?v=33"></script>
+<script src="js/connection.js?v=33"></script>
+<script src="js/charts.js?v=33"></script>
+<script src="js/session.js?v=33"></script>
+<script src="js/auth.js?v=33"></script>
+<script src="js/physio-engine.js?v=33"></script>
+<script src="js/doctor-portal.js?v=33"></script>
+<script src="js/patient-portal.js?v=33"></script>
+<script src="js/app.js?v=33"></script>
+</body>
+</html>
