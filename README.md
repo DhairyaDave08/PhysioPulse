@@ -60,23 +60,28 @@ The MPU6050 provides acceleration and angular velocity, but it does not understa
 
 ### **Images**
 <p align="center">
-  <img src="/assets/images/PhysioPulse/physiopulse-cover.jpg" width="800"><br/>
-  <i>PhysioPulse System Overview</i>
+  <img src="physiopulse-myosa-patient-dashboard.jpeg" width="800"><br/>
+  <i>Patient Dashboard</i>
 </p>
 
 <p align="center">
-  <img src="/assets/images/PhysioPulse/physiopulse-calibration.jpg" width="800"><br/>
-  <i>Patient-Specific Calibration Interface</i>
+  <img src="physiopulse-myosa-patient-exercise.jpeg" width="800"><br/>
+  <i>Patient Exercise</i>
 </p>
 
 <p align="center">
-  <img src="/assets/images/PhysioPulse/physiopulse-hardware.jpg" width="800"><br/>
-  <i>MYOSA Hardware Setup on Limb</i>
+  <img src="physiopulse-myosa-doctor.png" width="800"><br/>
+  <i>Doctor Dashboard</i>
 </p>
 
 <p align="center">
-  <img src="/assets/images/PhysioPulse/physiopulse-dashboard.jpg" width="800"><br/>
-  <i>Monitoring Interface</i>
+  <img src="physiopulse-myosa-hand.jpeg" width="800"><br/>
+  <i>Hand Exercise</i>
+</p>
+
+<p align="center">
+  <img src="physiopulse-myosa-leg.jpeg" width="800"><br/>
+  <i>Leg Exercise</i>
 </p>
 
 
