@@ -1,6 +1,6 @@
 ---
 publishDate: 2026-08-25
-title: PhysioPulse — Smart Physiotherapy Monitoring System
+title: PhysioPulse — Smart Physiotherapy Monitoring Sleeve
 excerpt: A wearable physiotherapy monitoring system combining MYOSA sensing, 3D motion analysis, personalized calibration, and exercise-specific movement detection — paired with a Doctor–Patient web portal for real-time remote monitoring.
 image: physiopulse-myosa-cover-image.PNG
 
