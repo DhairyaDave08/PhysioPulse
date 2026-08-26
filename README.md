@@ -85,9 +85,12 @@ The MPU6050 provides acceleration and angular velocity, but it does not understa
 
 
 ### **Videos**
+
 <video controls width="100%">
   <source src="/physiopulse-demo.mp4" type="video/mp4">
 </video>
+
+For better quality video, click [<i>Demo Video</i>](https://youtu.be/cy6f_C9twkY).
 
 ---
 ## Features (Detailed)
