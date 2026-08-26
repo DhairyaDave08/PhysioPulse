@@ -1,6 +1,5 @@
-| Metadata | Value |
-| :--- | :--- |
 | **publishDate** | 2026-08-25 |
+| :--- | :--- |
 | **title** | PhysioPulse - Smart Physiotherapy Monitoring Sleeve |
 | **excerpt** | A wearable physiotherapy monitoring system combining MYOSA sensing... |
 | **image** | ![PhysioPulse Cover](physiopulse-myosa-cover-image.PNG) |
