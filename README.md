@@ -65,28 +65,28 @@ The MPU6050 provides acceleration and angular velocity, but it does not understa
 
 <p align="center">
   <img src="physiopulse-myosa-patient-dashboard.jpeg" width="800"><br/>
-  <i>📱 Patient Dashboard</i>
+  <i>Patient Dashboard</i>
 </p>
 
 <p align="center">
   <img src="physiopulse-myosa-patient-exercise.jpeg" width="800"><br/>
-  <i>📱 Live HUD</i>
+  <i>Live HUD</i>
 </p>
 
 <p align="center">
   <img src="physiopulse-myosa-hand.jpeg" width="800"><br/>
-  <i>🦾 Hand Tracking</i>
+  <i>Hand Tracking</i>
 </p>
 
 <p align="center">
   <img src="physiopulse-myosa-leg.jpeg" width="800"><br/>
-  <i>🦾 Leg Tracking</i>
+  <i> Leg Tracking</i>
 </p>
 
 ### **Videos**
 
 <video controls width="100%">
-  <source src="physiopulse-demo.mp4" type="video/mp4">
+  <source src="/physiopulse-demo.mp4" type="video/mp4"> 
 </video>
 
 ---
