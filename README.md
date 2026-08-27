@@ -56,38 +56,32 @@ The MPU6050 provides acceleration and angular velocity, but it does not understa
 ---
 
 ## Demo / Examples
-
-### **Images**
+## **Images**
 
 <p align="center">
-  <img src="physiopulse-myosa-doctor.png" width="95%"><br/>
-  <sub><b>🖥️ Doctor Clinical Suite</b> — Patient management, 2-step ROM calibration & analytics</sub>
+  <img src="physiopulse-myosa-doctor.png" width="800"><br/>
+  <i>🖥️ Doctor Clinical Suite — Patient management, 2-step ROM calibration & analytics</i>
 </p>
 
-<table>
-  <tr>
-    <th align="center" colspan="2">📱 Patient Web Application</th>
-    <th align="center" colspan="2">🦾 Real-Time Wearable Tracking</th>
-  </tr>
-  <tr>
-    <td align="center" width="25%">
-      <img src="physiopulse-myosa-patient-dashboard.jpeg" width="100%"><br/>
-      <sub><b>Dashboard</b></sub>
-    </td>
-    <td align="center" width="25%">
-      <img src="physiopulse-myosa-patient-exercise.jpeg" width="100%"><br/>
-      <sub><b>Live HUD</b></sub>
-    </td>
-    <td align="center" width="25%">
-      <img src="physiopulse-myosa-hand.jpeg" width="100%"><br/>
-      <sub><b>Hand Tracking</b></sub>
-    </td>
-    <td align="center" width="25%">
-      <img src="physiopulse-myosa-leg.jpeg" width="100%"><br/>
-      <sub><b>Leg Tracking</b></sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="physiopulse-myosa-patient-dashboard.jpeg" width="800"><br/>
+  <i>📱 Patient Dashboard</i>
+</p>
+
+<p align="center">
+  <img src="physiopulse-myosa-patient-exercise.jpeg" width="800"><br/>
+  <i>📱 Live HUD</i>
+</p>
+
+<p align="center">
+  <img src="physiopulse-myosa-hand.jpeg" width="800"><br/>
+  <i>🦾 Hand Tracking</i>
+</p>
+
+<p align="center">
+  <img src="physiopulse-myosa-leg.jpeg" width="800"><br/>
+  <i>🦾 Leg Tracking</i>
+</p>
 
 ### **Videos**
 
