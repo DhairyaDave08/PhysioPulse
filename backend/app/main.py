@@ -8,32 +8,39 @@ from app.config import settings
 from app.database import engine, Base
 from app.routers import auth, patients, thresholds, exercise, sessions, alerts
 
+# pyrefly: ignore[missing-import]
 from sqlalchemy import text
 
 def run_migrations():
     Base.metadata.create_all(bind=engine)
-    with engine.connect() as conn:
-        try:
-            res = conn.execute(text("PRAGMA table_info(thresholds)")).fetchall()
-            col_names = [r[1] for r in res]
-            if "video_url" not in col_names:
-                conn.execute(text("ALTER TABLE thresholds ADD COLUMN video_url VARCHAR(500) DEFAULT ''"))
-            if "strict_limit" not in col_names:
-                conn.execute(text("ALTER TABLE thresholds ADD COLUMN strict_limit BOOLEAN DEFAULT 1"))
-            res_users = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-            user_cols = [r[1] for r in res_users]
-            if "patient_code" not in user_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN patient_code VARCHAR(50) DEFAULT NULL"))
-                conn.execute(text("CREATE UNIQUE INDEX ix_users_patient_code ON users (patient_code)"))
+    if engine.dialect.name == "sqlite":
+        with engine.connect() as conn:
+            try:
+                res = conn.execute(text("PRAGMA table_info(thresholds)")).fetchall()
+                col_names = [r[1] for r in res]
+                if "video_url" not in col_names:
+                    conn.execute(text("ALTER TABLE thresholds ADD COLUMN video_url VARCHAR(500) DEFAULT ''"))
+                if "strict_limit" not in col_names:
+                    conn.execute(text("ALTER TABLE thresholds ADD COLUMN strict_limit BOOLEAN DEFAULT 1"))
+                res_users = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+                user_cols = [r[1] for r in res_users]
+                if "patient_code" not in user_cols:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN patient_code VARCHAR(50) DEFAULT NULL"))
+                    conn.execute(text("CREATE UNIQUE INDEX ix_users_patient_code ON users (patient_code)"))
 
-            conn.commit()
-        except Exception as e:
-            print("[Migration] Note:", e)
+                conn.commit()
+            except Exception as e:
+                print("[Migration] SQLite note:", e)
 
 # Create DB tables & run migrations
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     run_migrations()
+    try:
+        from app.seed import seed_database
+        seed_database()
+    except Exception as e:
+        print("[Lifespan] Seed note:", e)
     yield
 
 app = FastAPI(

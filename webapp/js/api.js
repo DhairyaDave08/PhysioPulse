@@ -9,25 +9,34 @@ const API = (() => {
   let isBackendOnline = false;
 
   function getBaseUrl() {
+    // 1. Explicit override via config (e.g. backend-config.js)
+    if (window.PHYSIOPULSE_CONFIG && window.PHYSIOPULSE_CONFIG.API_BASE_URL) {
+      return window.PHYSIOPULSE_CONFIG.API_BASE_URL.replace(/\/$/, '');
+    }
+
     const origin = window.location.origin || '';
     const hostname = window.location.hostname || 'localhost';
     const port = window.location.port;
 
-    // If served directly by FastAPI backend on port 8000
+    // 2. If served directly by FastAPI backend on port 8000
     if (port === '8000') {
       return origin;
     }
 
-    // If served by a frontend dev server (Live Server 5500/5501, Vite 5173, React 3000, WebServer 8080, etc.)
-    // Route API requests to FastAPI backend on port 8000 on the same host
+    // 3. If served by a local frontend dev server (Live Server, Vite, etc.)
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
       const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
       return `${protocol}//${hostname}:8000`;
     }
 
-    // ESP32 AP Mode fallback or default
+    // 4. ESP32 AP Mode fallback or file://
     if (origin.includes('192.168.4.1') || origin.startsWith('file:')) {
       return DEFAULT_BACKEND_URL;
+    }
+
+    // 5. In production (Vercel, custom domain, HTTPS), use the current origin
+    if (origin.startsWith('http://') || origin.startsWith('https://')) {
+      return origin;
     }
 
     return DEFAULT_BACKEND_URL;

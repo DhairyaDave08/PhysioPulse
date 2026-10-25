@@ -12,3 +12,10 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# Environment & Vercel
+.env
+.env.local
+.env.*.local
+.vercel
+
