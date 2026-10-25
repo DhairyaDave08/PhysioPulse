@@ -174,7 +174,7 @@ PhysioEngine (Vanilla JS, ES6+)
         ↓
 Doctor Portal   ⇄   Patient Portal
         ↓
-FastAPI + SQLAlchemy + SQLite
+FastAPI + SQLAlchemy (SQLite / Supabase PostgreSQL)
 ```
 
 This keeps the wearable simple and power-efficient while the vector mathematics from Sections 1–2 (dot products, cross products, plane-deviation checks) run in real time in the browser rather than on the microcontroller.
@@ -205,8 +205,8 @@ The Patient Portal is what the patient uses during a home session:
 
 ### **11. Backend & Data Layer**
 Patient history, prescriptions, and pain events are persisted through a FastAPI service:
-* Python 3.10+ with FastAPI as an asynchronous ASGI service, served by Uvicorn.
-* SQLAlchemy ORM over SQLite, with tables for users, patient profiles, prescriptions, thresholds, exercise history, and pain logs.
+* Python 3.10+ with FastAPI as an asynchronous ASGI service, served locally by Uvicorn or in cloud deployment as Vercel Serverless Functions.
+* SQLAlchemy ORM supporting SQLite for zero-config local development and Supabase PostgreSQL for cloud production, with tables for users, patient profiles, prescriptions, thresholds, exercise history, and pain logs.
 * OAuth2 password-bearer authentication with JWT tokens and bcrypt-salted password hashing.
 
 ### **12. Safety Design**
@@ -243,28 +243,43 @@ Because a patient is exercising unsupervised at home, the software layer treats 
 * **Communication:** Bluetooth Low Energy (BLE) GATT notifications, 50 Hz streaming
 * **Client Math Engine:** PhysioEngine v6.1 (Vanilla JavaScript ES6+), Dynamic Complementary Filter, Gram-Schmidt Calibration, Analytical Zero-Point Normalization
 * **Frontend:** HTML5, CSS3 (Glassmorphic Dark UI), Vanilla JavaScript (ES6+), Web Bluetooth API, Web Audio API, Chart.js, PWA (Service Worker + Web Manifest)
-* **Backend:** Python 3.10+, FastAPI, SQLAlchemy, SQLite, Uvicorn, OAuth2 / JWT, bcrypt
+* **Backend:** Python 3.10+, FastAPI, SQLAlchemy, SQLite (Local Dev) / PostgreSQL (Production), Uvicorn, OAuth2 / JWT, bcrypt
+* **Cloud & Deployment:** Vercel (Edge CDN + Serverless Python Functions), Supabase (Hosted PostgreSQL)
 
 ---
 
 ## Requirements / Installation
 
 ### Firmware
-Install the Arduino IDE with ESP32 board support and the required libraries.
+Install the Arduino IDE with ESP32 board support and the required libraries. Upload the firmware to the ESP32 using the Arduino IDE.
 
-Upload the firmware to the ESP32 using the Arduino IDE.
+### Backend (Local Development)
+```bash
+# 1. Install Python dependencies
+pip install -r backend/requirements.txt
+```
 
-### Backend
 ```bash
-# Python dependencies
-pip install fastapi uvicorn sqlalchemy python-jose[cryptography] passlib[bcrypt]
+# 2. Run backend & webapp on localhost:8000
+python backend/run.py
 ```
-```bash
-uvicorn main:app --reload
-```
+* Interactive API documentation is available at `http://localhost:8000/docs`.
+* By default, local runs use SQLite (`physiopulse.db`). To test with Supabase locally, create a `.env` file with your `DATABASE_URL`.
+
+### Cloud Deployment (Vercel + Supabase)
+1. **Supabase Database**:
+   - Create a free project at [supabase.com](https://supabase.com).
+   - In the Supabase Dashboard, open **SQL Editor** &rarr; paste the contents of `supabase_schema.sql` &rarr; click **Run** to set up tables and default demo accounts.
+   - Go to **Project Settings** &rarr; **Database** &rarr; copy the **URI** connection string.
+2. **Vercel Deployment**:
+   - Import this GitHub repository into [vercel.com](https://vercel.com).
+   - Add Environment Variables in Vercel project settings:
+     - `DATABASE_URL`: Your Supabase PostgreSQL connection URI.
+     - `SECRET_KEY`: A 32+ character random string for JWT token generation.
+   - Click **Deploy**. Vercel will host the frontend via global Edge CDN and serve the FastAPI backend through serverless Python functions (`api/index.py`).
 
 ### Frontend / Web Portal
-No installation is required. Open the Doctor or Patient Portal in a Web Bluetooth-capable browser (Chrome or Edge on desktop, or Chrome on Android). The portal can also be installed as a PWA using the browser's "Add to Home Screen" / "Install" prompt for a native-app-like experience.
+No build tools are required. Open the Doctor or Patient Portal in a Web Bluetooth-capable browser (Google Chrome or Microsoft Edge on desktop, or Chrome on Android). The portal can also be installed as a PWA using the browser's "Add to Home Screen" / "Install" prompt.
 
 ---
 
@@ -272,27 +287,55 @@ No installation is required. Open the Doctor or Patient Portal in a Web Bluetoot
 
 ```text
 PhysioPulse/
+├── api/
+│   └── index.py                     # Vercel Serverless Function entrypoint (FastAPI ASGI handler)
+│
 ├── backend/
 │   ├── app/
 │   │   ├── routers/
+│   │   │   ├── __init__.py
+│   │   │   ├── alerts.py            # Clinician pain-escalation endpoints
+│   │   │   ├── auth.py              # JWT authentication & doctor/patient login
+│   │   │   ├── exercise.py          # Exercise history & rep compliance tracking
+│   │   │   ├── patients.py          # Patient roster, demographics & registration
+│   │   │   ├── sessions.py          # Raw 50 Hz sensor session capture & CSV export
+│   │   │   └── thresholds.py        # Clinical ROM limits & target rep prescriptions
 │   │   ├── __init__.py
-│   │   ├── auth.py
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   ├── main.py
-│   │   ├── models.py
-│   │   ├── schemas.py
-│   │   └── seed.py
+│   │   ├── auth.py                  # Bcrypt hashing & OAuth2 JWT helpers
+│   │   ├── config.py                # Environment & directory path configuration
+│   │   ├── database.py              # SQLAlchemy engine (SQLite + Supabase PostgreSQL)
+│   │   ├── main.py                  # FastAPI app factory, CORS, static mount & lifespan
+│   │   ├── models.py                # SQLAlchemy ORM models
+│   │   ├── schemas.py               # Pydantic request/response schemas
+│   │   └── seed.py                  # Initial seed data for demo accounts
 │   ├── tests/
 │   │   ├── __init__.py
-│   │   └── test_api.py
-│   ├── requirements.txt
-│   └── run.py
+│   │   └── test_api.py              # Pytest backend API test suite
+│   ├── requirements.txt             # Backend-specific Python requirements
+│   └── run.py                       # Local Uvicorn server launcher
 │
 ├── firmware/
-│   └── main.ino
+│   └── main.ino                     # ESP32 + MPU-6050 firmware (BLE GATT streaming)
 │
-├── webapp/
+├── public/                          # Production static distribution (Vercel Edge CDN)
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   ├── api.js                   # API client (auto-detects local vs production host)
+│   │   ├── app.js                   # Main UI controller & state management
+│   │   ├── auth.js                  # Frontend auth state & role switching
+│   │   ├── backend-config.js        # Optional runtime overrides & Supabase keys
+│   │   ├── charts.js                # Real-time Chart.js kinematic graphs
+│   │   ├── connection.js            # Web Bluetooth GATT streaming interface
+│   │   ├── doctor-portal.js         # Doctor Clinical Suite (Prescriptions & ROM Calibration)
+│   │   ├── patient-portal.js        # Patient HUD (Live feedback, safety checks & pain reporting)
+│   │   ├── physio-engine.js         # Client-side 3D biomechanics, vector math & state machines
+│   │   └── session.js               # Sensor session recording & CSV export
+│   ├── index.html                   # Unified web app portal
+│   ├── manifest.json                # PWA Progressive Web App manifest
+│   └── sw.js                        # PWA offline Service Worker
+│
+├── webapp/                          # Web app source directory
 │   ├── css/
 │   │   └── style.css
 │   ├── js/
@@ -310,8 +353,12 @@ PhysioPulse/
 │   ├── manifest.json
 │   └── sw.js
 │
-├── .gitignore
-├── README.md
+├── .env.example                     # Environment variables configuration template
+├── .gitignore                       # Git ignore list (excludes .env, .vercel, db, cache)
+├── README.md                        # Documentation & architecture guide
+├── requirements.txt                 # Root Python requirements for Vercel deployment
+├── supabase_schema.sql              # Supabase PostgreSQL schema DDL & seed data script
+├── vercel.json                      # Vercel deployment & routing configuration
 ├── physiopulse-demo.mp4
 ├── physiopulse-myosa-cover-image.PNG
 ├── physiopulse-myosa-doctor.png
