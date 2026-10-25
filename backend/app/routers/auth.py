@@ -13,12 +13,6 @@ def generate_doctor_code(user_id: int) -> str:
 
 @router.post("/register", response_model=AuthResponse)
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
-    # Public self-registration is closed. Doctor accounts are issued directly by the organization.
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Public registration is closed. Doctor accounts are issued directly by the company, and patients are created by their assigned doctor."
-    )
-
     email_clean = user_data.email.lower().strip()
     existing = db.query(User).filter(User.email == email_clean).first()
     if existing:
@@ -59,6 +53,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         new_user.doctor_code = generate_doctor_code(new_user.id)
         db.flush()
     elif user_data.role == "patient" and doctor:
+        new_user.patient_code = f"PT-{new_user.id:04d}"
         doctor_id = doctor.id
         patient_profile = Patient(
             user_id=new_user.id,
@@ -89,6 +84,8 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
     login_id = login_data.email.strip()
     if login_id.upper().startswith("PT-"):
         user = db.query(User).filter(User.patient_code == login_id.upper()).first()
+    elif login_id.upper().startswith("DR") and db.query(User).filter(User.doctor_code == login_id.upper()).first():
+        user = db.query(User).filter(User.doctor_code == login_id.upper()).first()
     else:
         user = db.query(User).filter(User.email == login_id.lower()).first()
         

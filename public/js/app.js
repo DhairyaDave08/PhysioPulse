@@ -445,14 +445,46 @@ const App = (() => {
 
   // ─── Auth Event Listeners ─────────────────────────────────────────────────
   function bindAuthEvents() {
+    // Switch between Login and Register
+    document.getElementById('toRegisterLink')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('auth-login')?.classList.add('hidden');
+      document.getElementById('auth-register')?.classList.remove('hidden');
+    });
+
+    document.getElementById('toLoginLink')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('auth-register')?.classList.add('hidden');
+      document.getElementById('auth-login')?.classList.remove('hidden');
+    });
+
+    // Role switcher on Register card
+    document.querySelectorAll('.role-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const role = btn.dataset.role;
+        const codeGroup = document.getElementById('regDoctorCodeGroup');
+        if (codeGroup) {
+          if (role === 'patient') {
+            codeGroup.classList.remove('hidden');
+          } else {
+            codeGroup.classList.add('hidden');
+          }
+        }
+      });
+    });
+
     // Login
     document.getElementById('loginBtn')?.addEventListener('click', doLogin);
     document.getElementById('loginPassword')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') doLogin();
     });
 
-    document.getElementById('loginUserId')?.addEventListener('input', (e) => {
-      e.target.value = e.target.value.toUpperCase();
+    // Register
+    document.getElementById('registerBtn')?.addEventListener('click', doRegister);
+    document.getElementById('regPassword')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doRegister();
     });
 
     // Logout
@@ -460,7 +492,7 @@ const App = (() => {
   }
 
   async function doLogin() {
-    const loginId  = document.getElementById('loginUserId')?.value?.trim()?.toUpperCase() || '';
+    const loginId  = document.getElementById('loginUserId')?.value?.trim() || '';
     const password = document.getElementById('loginPassword')?.value;
     const errorEl  = document.getElementById('loginError');
     const btnText  = document.getElementById('loginBtnText');
@@ -471,7 +503,6 @@ const App = (() => {
     if (errorEl) errorEl.classList.add('hidden');
 
     try {
-      bindAuthEvents();
       const session = await Auth.login(loginId, password);
       showApp(session);
     } catch (e) {
@@ -483,10 +514,10 @@ const App = (() => {
   }
 
   async function doRegister() {
-    const name         = document.getElementById('regName')?.value?.trim();
-    const preferredId  = document.getElementById('regUserId')?.value?.trim()?.toUpperCase() || '';
-    const password     = document.getElementById('regPassword')?.value;
-    const doctorUserId = document.getElementById('regDoctorUserId')?.value?.trim()?.toUpperCase() || '';
+    const name       = document.getElementById('regName')?.value?.trim();
+    const email      = document.getElementById('regEmail')?.value?.trim();
+    const password   = document.getElementById('regPassword')?.value;
+    const doctorCode = document.getElementById('regDoctorCode')?.value?.trim()?.toUpperCase() || '';
     const activeRole = document.querySelector('.role-btn.active')?.dataset.role || 'doctor';
     const errorEl    = document.getElementById('registerError');
     const btnText    = document.getElementById('registerBtnText');
@@ -497,10 +528,17 @@ const App = (() => {
     if (errorEl) errorEl.classList.add('hidden');
 
     try {
-      bindAuthEvents();
-      const registration = await Auth.register(activeRole, name, preferredId, password, doctorUserId);
-      showToast(`Account created. Your User ID: ${registration.loginId}`, 'success');
-      const session = await Auth.login(registration.loginId, password);
+      if (!name) throw new Error('Please enter your full name');
+      if (!email) throw new Error('Please enter your email address');
+      if (!password || password.length < 6) throw new Error('Password must be at least 6 characters');
+      if (activeRole === 'patient' && !doctorCode) throw new Error('Please enter your assigned Doctor Code (e.g. DR0001)');
+
+      const session = await Auth.register(activeRole, name, email, password, doctorCode);
+      if (session.role === 'doctor' && session.doctorCode) {
+        showToast(`Doctor account created! Your code is ${session.doctorCode}`, 'success');
+      } else {
+        showToast('Account created successfully!', 'success');
+      }
       showApp(session);
     } catch (e) {
       if (errorEl) { errorEl.textContent = e.message; errorEl.classList.remove('hidden'); }

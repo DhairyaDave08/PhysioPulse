@@ -72,8 +72,8 @@
     <div id="loginError" class="auth-error hidden"></div>
 
     <div class="form-group">
-      <label class="form-label" for="loginUserId">Email or Patient ID</label>
-      <input type="text" class="form-input" id="loginUserId" placeholder="e.g. DR123456" autocomplete="username" style="text-transform:uppercase" />
+      <label class="form-label" for="loginUserId">Email, Patient ID, or Doctor Code</label>
+      <input type="text" class="form-input" id="loginUserId" placeholder="e.g. doctor@physiopulse.com, DR0001, PT-0001" autocomplete="username" />
     </div>
     <div class="form-group">
       <label class="form-label" for="loginPassword">Password</label>
@@ -83,8 +83,68 @@
       <span id="loginBtnText">Sign In</span>
       <span id="loginBtnLoader" class="btn-loader hidden">⟳</span>
     </button>
-    <p class="auth-switch" style="font-size:0.8rem; opacity:0.6; margin-top:1.5rem">
-      🔒 Doctor and Patient accounts are provisioned directly by the company.
+    <p class="auth-switch" style="margin-top:1.5rem">
+      Don't have an account? <a href="#" id="toRegisterLink">Create an account</a>
+    </p>
+  </div>
+
+  <!-- Register Page -->
+  <div id="auth-register" class="auth-card hidden">
+    <div class="auth-logo">
+      <svg viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="22" stroke="url(#regGrad)" stroke-width="1.5"/>
+        <path d="M10 24 L16 16 L22 28 L28 10 L34 22 L40 24" stroke="url(#regGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="regGrad" x1="10" y1="10" x2="40" y2="38" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00d4ff"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div>
+        <h1 class="auth-brand">PhysioPulse</h1>
+        <p class="auth-brand-sub">MYOSA 6.0</p>
+      </div>
+    </div>
+    <h2 class="auth-title">Create Account</h2>
+    <p class="auth-subtitle">Select your role to get started</p>
+
+    <div id="registerError" class="auth-error hidden"></div>
+
+    <div class="role-selector">
+      <button type="button" class="role-btn active" data-role="doctor" id="roleBtnDoctor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 11h6m-3-3v6"/></svg>
+        Doctor
+      </button>
+      <button type="button" class="role-btn" data-role="patient" id="roleBtnPatient">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Patient
+      </button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="regName">Full Name</label>
+      <input type="text" class="form-input" id="regName" placeholder="e.g. Dr. Jane Smith" autocomplete="name" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="regEmail">Email Address</label>
+      <input type="email" class="form-input" id="regEmail" placeholder="e.g. jane@clinic.com" autocomplete="email" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="regPassword">Password</label>
+      <input type="password" class="form-input" id="regPassword" placeholder="Minimum 6 characters" autocomplete="new-password" />
+    </div>
+    <div class="form-group hidden" id="regDoctorCodeGroup">
+      <label class="form-label" for="regDoctorCode">Doctor Code (from your assigned doctor)</label>
+      <input type="text" class="form-input" id="regDoctorCode" placeholder="e.g. DR0001" style="text-transform:uppercase" />
+    </div>
+
+    <button class="btn-primary auth-submit" id="registerBtn">
+      <span id="registerBtnText">Sign Up</span>
+      <span id="registerBtnLoader" class="btn-loader hidden">⟳</span>
+    </button>
+    <p class="auth-switch" style="margin-top:1.5rem">
+      Already have an account? <a href="#" id="toLoginLink">Sign In</a>
     </p>
   </div>
 </div>
